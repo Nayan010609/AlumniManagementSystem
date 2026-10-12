@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Alumni Mentoring & Engagement Management System</title>
+    <style>
+        :root { --primary: #2c3e50; --accent: #27ae60; --bg: #f4f7f6; --white: #ffffff; }
+        body { font-family: system-ui, -apple-system, sans-serif; background: var(--bg); color: #333; margin: 0; padding: 20px; }
+        .container { max-width: 1000px; margin: auto; background: var(--white); padding: 25px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        h1 { color: var(--primary); font-size: 1.5rem; margin-top: 0; border-bottom: 2px solid var(--bg); padding-bottom: 10px; }
+        .nav-tabs { display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; }
+        .nav-tabs button { padding: 8px 14px; background: var(--primary); color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 0.9rem; }
+        .nav-tabs button.active { background: var(--accent); }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+        table { width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 0.9rem; }
+        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+        th { background: var(--primary); color: white; }
+        form { display: grid; gap: 12px; max-width: 450px; margin-top: 15px; }
+        label { font-weight: bold; font-size: 0.85rem; }
+        input, select { padding: 8px; border: 1px solid #ccc; border-radius: 4px; width: 100%; box-sizing: border-box; }
+        button.submit-btn { background: var(--accent); color: white; border: none; padding: 10px; border-radius: 4px; cursor: pointer; font-weight: bold; }
+        button.submit-btn:hover { background: #219653; }
+        .alert { background: #e8f5e9; color: #2e7d32; padding: 10px; border-radius: 4px; margin-bottom: 15px; font-size: 0.9rem; }
+        .error { background: #ffebee; color: #c62828; padding: 10px; border-radius: 4px; margin-bottom: 15px; font-size: 0.9rem; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>Alumni Mentoring & Engagement Management System</h1>
+    
+    <div id="message"></div>
+
+    <div class="nav-tabs">
+        <button class="active" onclick="switchTab(event, 'reportsTab')">Reports & Views</button>
+        <button onclick="switchTab(event, 'alumniTab')">Register Alumni</button>
+        <button onclick="switchTab(event, 'requestTab')">Mentoring Request</button>
+        <button onclick="switchTab(event, 'assignTab')">Assign Mentor (3NF)</button>
+        <button onclick="switchTab(event, 'donationTab')">Donations</button>
+    </div>
+
+    <!-- REPORTS TAB -->
+    <div id="reportsTab" class="tab-content active">
+        <h3>1. Mentor Matches & Requests (JOIN Report)</h3>
+        <table>
+            <thead><tr><th>Req ID</th><th>Student</th><th>Topic</th><th>Status</th><th>Assigned Mentor</th></tr></thead>
+            <tbody id="matchTableBody"></tbody>
+        </table>
+
+        <h3>2. Alumni Donations Summary (Positive Constraint Verified)</h3>
+        <table>
+            <thead><tr><th>Donation ID</th><th>Alumni Name</th><th>Amount ($)</th><th>Date</th></tr></thead>
+            <tbody id="donationTableBody"></tbody>
+        </table>
+
+        <h3>3. Events & Capacity Status</h3>
+        <table>
+            <thead><tr><th>Event Name</th><th>Date</th><th>Capacity</th></tr></thead>
+            <tbody id="eventTableBody"></tbody>
+        </table>
+    </div>
+
+    <!-- REGISTER ALUMNI TAB -->
+    <div id="alumniTab" class="tab-content">
+        <h3>Register New Alumni (Unique Email Constraint)</h3>
+        <form onsubmit="handleRegisterAlumni(event)">
+            <div><label>Full Name:</label><input type="text" id="alumniName" required></div>
+            <div><label>Email (Must be Unique):</label><input type="email" id="alumniEmail" required></div>
+            <div><label>Graduation Year:</label><input type="number" id="alumniYear" required></div>
+            <div><label>Programme:</label>
+                <select id="alumniProg">
+                    <option value="B.Tech Computer Science">B.Tech Computer Science</option>
+                    <option value="B.Sc Physics">B.Sc Physics</option>
+                    <option value="B.A Media Studies">B.A Media Studies</option>
+                </select>
+            </div>
+            <button type="submit" class="submit-btn">Save Alumni</button>
+        </form>
+    </div>
+
+    <!-- MENTORING REQUEST TAB -->
+    <div id="requestTab" class="tab-content">
+        <h3>Submit Student Mentoring Request</h3>
+        <form onsubmit="handleMentoringRequest(event)">
+            <div><label>Student Name:</label><input type="text" id="studentName" required></div>
+            <div><label>Student Email:</label><input type="email" id="studentEmail" required></div>
+            <div><label>Topic / Area:</label><input type="text" id="reqTopic" required></div>
+            <button type="submit" class="submit-btn">Submit Request</button>
+        </form>
+    </div>
+
+    <!-- ASSIGN MENTOR TAB -->
+    <div id="assignTab" class="tab-content">
+        <h3>Assign Mentor (Enforces One Active Mentor per Request)</h3>
+        <form onsubmit="handleAssignMentor(event)">
+            <div><label>Select Pending Request:</label><select id="pendingReqSelect" required></select></div>
+            <div><label>Select Mentor (Alumni):</label><select id="mentorSelect" required></select></div>
+            <button type="submit" class="submit-btn">Confirm Assignment</button>
+        </form>
+    </div>
+
+    <!-- DONATION TAB -->
+    <div id="donationTab" class="tab-content">
+        <h3>Record Alumni Donation (Amount > 0 Constraint)</h3>
+        <form onsubmit="handleDonation(event)">
+            <div><label>Select Alumni:</label><select id="donorSelect" required></select></div>
+            <div><label>Amount ($):</label><input type="number" step="0.01" id="donationAmount" min="0.01" required></div>
+            <div><label>Date:</label><input type="date" id="donationDate" required></div>
+            <button type="submit" class="submit-btn">Record Donation</button>
+        </form>
+    </div>
+
+</div>
+
+<script>
+    let db = {};
+
+    function getDB() {
+        return fetch('/api/data').then(r => r.json()).then(data => { db = data; return data; });
+    }
+
+    function switchTab(evt, tabName) {
+        document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+        document.querySelectorAll('.nav-tabs button').forEach(el => el.classList.remove('active'));
+        document.getElementById(tabName).classList.add('active');
+        evt.currentTarget.classList.add('active');
+        refreshUI();
+    }
+
+    function showMsg(text, isError = false) {
+        const m = document.getElementById('message');
+        m.className = isError ? 'error' : 'alert';
+        m.textContent = text;
+        setTimeout(() => m.textContent = '', 4000);
+    }
+
+    function refreshUI() {
+        getDB().then(data => {
+            // 1. Reports: Matches
+            let matchHTML = '';
+            data.requests.forEach(r => {
+                const student = data.students.find(s => s.id === r.studentId) || { name: 'Unknown' };
+                const mentor = data.alumni.find(a => a.id === r.alumniId);
+                matchHTML += `<tr><td>${r.id}</td><td>${student.name}</td><td>${r.topic}</td><td>${r.status}</td><td>${mentor ? mentor.name : 'None (Pending)'}</td></tr>`;
+            });
+            document.getElementById('matchTableBody').innerHTML = matchHTML;
+
+            // 2. Reports: Donations
+            let donHTML = '';
+            data.donations.forEach(d => {
+                const alumni = data.alumni.find(a => a.id === d.alumniId) || { name: 'Unknown' };
+                donHTML += `<tr><td>${d.id}</td><td>${alumni.name}</td><td>$${Number(d.amount).toFixed(2)}</td><td>${d.date}</td></tr>`;
+            });
+            document.getElementById('donationTableBody').innerHTML = donHTML;
+
+            // 3. Reports: Events
+            let evHTML = '';
+            data.events.forEach(e => {
+                evHTML += `<tr><td>${e.name}</td><td>${e.date}</td><td>${e.capacity}</td></tr>`;
+            });
+            document.getElementById('eventTableBody').innerHTML = evHTML;
+
+            // Populate Dropdowns
+            let pendingReqOpt = '';
+            data.requests.filter(r => r.status === 'Pending').forEach(r => {
+                const student = data.students.find(s => s.id === r.studentId);
+                pendingReqOpt += `<option value="${r.id}">Req #${r.id} - ${student ? student.name : ''} (${r.topic})</option>`;
+            });
+            document.getElementById('pendingReqSelect').innerHTML = pendingReqOpt || '<option disabled>No pending requests</option>';
+
+            let alumniOpt = '';
+            data.alumni.forEach(a => {
+                alumniOpt += `<option value="${a.id}">${a.name} (${a.prog})</option>`;
+            });
+            document.getElementById('mentorSelect').innerHTML = alumniOpt;
+            document.getElementById('donorSelect').innerHTML = alumniOpt;
+        });
+    }
+
+    function handleRegisterAlumni(e) {
+        e.preventDefault();
+        const payload = {
+            name: document.getElementById('alumniName').value,
+            email: document.getElementById('alumniEmail').value,
+            year: Number(document.getElementById('alumniYear').value),
+            prog: document.getElementById('alumniProg').value
+        };
+        
+        fetch('/api/alumni/register', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        })
+        .then(r => r.json())
+        .then(data => {
+            if (data.error) {
+                showMsg(data.error, true);
+            } else {
+                showMsg(data.success);
+                e.target.reset();
+                refreshUI();
+            }
+        })
+        .catch(err => showMsg('Error: ' + err, true));
+    }
+
+    function handleMentoringRequest(e) {
+        e.preventDefault();
+        const payload = {
+            studentName: document.getElementById('studentName').value,
+            studentEmail: document.getElementById('studentEmail').value,
+            topic: document.getElementById('reqTopic').value
+        };
+        
+        fetch('/api/mentoring/request', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        })
+        .then(r => r.json())
+        .then(data => {
+            if (data.error) {
+                showMsg(data.error, true);
+            } else {
+                showMsg(data.success);
+                e.target.reset();
+                refreshUI();
+            }
+        })
+        .catch(err => showMsg('Error: ' + err, true));
+    }
+
+    function handleAssignMentor(e) {
+        e.preventDefault();
+        const payload = {
+            requestId: Number(document.getElementById('pendingReqSelect').value),
+            mentorId: Number(document.getElementById('mentorSelect').value)
+        };
+        
+        fetch('/api/mentoring/assign', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        })
+        .then(r => r.json())
+        .then(data => {
+            if (data.error) {
+                showMsg(data.error, true);
+            } else {
+                showMsg(data.success);
+                refreshUI();
+            }
+        })
+        .catch(err => showMsg('Error: ' + err, true));
+    }
+
+    function handleDonation(e) {
+        e.preventDefault();
+        const payload = {
+            alumniId: Number(document.getElementById('donorSelect').value),
+            amount: Number(document.getElementById('donationAmount').value),
+            date: document.getElementById('donationDate').value
+        };
+        
+        fetch('/api/donation/record', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        })
+        .then(r => r.json())
+        .then(data => {
+            if (data.error) {
+                showMsg(data.error, true);
+            } else {
+                showMsg(data.success);
+                e.target.reset();
+                refreshUI();
+            }
+        })
+        .catch(err => showMsg('Error: ' + err, true));
+    }
+
+    window.onload = refreshUI;
+</script>
+
+</body>
+</html>
